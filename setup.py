@@ -11,8 +11,8 @@ from setuptools.command.sdist import sdist
 from distutils.command.clean import clean
 
 
-VERSION = '1.0.3'
-REPO = 'https://github.com/tarruda/libmpack'
+VERSION = '0.0.1'
+REPO = 'https://github.com/libmpack/libmpack-python'
 
 
 class Clean(clean):
@@ -29,11 +29,16 @@ class Clean(clean):
 def with_hooks(cmdclass):
     def _autopxd():
         from autopxd import translate
+        # due to some current limitations in autopxd, we must change
+        # directories to ensure the pxd is generated with the correct includes
+        cwd = os.getcwd()
+        os.chdir('mpack')
         mpack_src = 'mpack-src/src/mpack.c'
         with open(mpack_src) as f:
             hdr = f.read()
-        with open('cmpack.pxd', 'w') as f:
+        with open('_cmpack.pxd', 'w') as f:
             f.write(translate(hdr, mpack_src))
+        os.chdir(cwd)
 
     def _cythonize():
         try:
@@ -46,7 +51,7 @@ def with_hooks(cmdclass):
         }
         if os.getenv('NDEBUG', False):
             kwargs['gdb_debug'] = False
-        cythonize([Extension('mpack', ['mpack.pyx'])], **kwargs)
+        cythonize([Extension('mpack._mpack', ['mpack/_mpack.pyx'])], **kwargs)
 
     class Sub(cmdclass):
         def build_extensions(self):
@@ -59,13 +64,14 @@ def with_hooks(cmdclass):
     return Sub
 
 
-extensions = [Extension("mpack", ['mpack.c'])]
+extensions = [Extension("mpack._mpack", ['mpack/_mpack.c'])]
 
 
 setup(
     name="mpack",
     version=VERSION,
     description="Python binding to libmpack",
+    packages=['mpack'],
     ext_modules=extensions,
     install_requires=['future'],
     url=REPO,

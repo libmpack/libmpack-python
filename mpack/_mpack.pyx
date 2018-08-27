@@ -6,7 +6,7 @@ from libc.stdlib cimport abort
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from cpython cimport array, bool, PY_MAJOR_VERSION, PY_MINOR_VERSION
 
-from cmpack cimport *
+from ._cmpack cimport *
 
 import array
 import sys

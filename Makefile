@@ -7,21 +7,23 @@ FETCH ?= curl -L -o -
 # stripping one directory component
 UNTGZ ?= tar xfz - --strip-components=1
 
+PYTHON ?= python
+
 all: build
 
 mpack-src:
-	dir="mpack-src"; \
+	dir="mpack/mpack-src"; \
 	mkdir -p $$dir && cd $$dir && \
 	$(FETCH) $(MPACK_URL) | $(UNTGZ)
 
 clean:
 	rm -rf mpack-src
-	python setup.py clean
+	$(PYTHON) setup.py clean
 
 test: build
-	python test.py
+	$(PYTHON) test.py
 
 build: mpack-src
-	python setup.py build_ext --inplace
+	$(PYTHON) setup.py build_ext --inplace
 
 .PHONY: all build test clean

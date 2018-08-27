@@ -1,8 +1,8 @@
 build/
-mpack-src/
 cython_debug/
-*.so
-*.c
-*.h
-cmpack.pxd
+mpack/mpack-src/
+mpack/*.so
+mpack/*.c
+mpack/*.h
+mpack/*.pxd
 *.egg-info/

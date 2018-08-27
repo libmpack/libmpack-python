@@ -6,7 +6,7 @@ import unittest
 unicode_str = re.compile("u([\"'])(.*?)\\1")
 byte_str = re.compile("b([\"'])(.*?)\\1")
 hex_addr = re.compile('at 0x[0-9a-fA-F]+')
-mpack_exc = re.compile(r'^mpack\.(Mpack.+)$')
+mpack_exc = re.compile(r'^mpack\._mpack\.(Mpack.+)$')
 
 class Py2And3StringChecker(doctest.OutputChecker):
     def check_output(self, want, got, optionflags):
