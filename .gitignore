@@ -5,3 +5,4 @@ cython_debug/
 *.c
 *.h
 cmpack.pxd
+*.egg-info/

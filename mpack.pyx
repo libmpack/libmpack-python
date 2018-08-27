@@ -526,7 +526,7 @@ cdef void parse_exit(mpack_parser_t* parser, mpack_node_t* node):
     if node.tok.type in [MPACK_TOKEN_BIN, MPACK_TOKEN_STR, MPACK_TOKEN_EXT]:
         obj = tobytes(obj)
         if node.tok.type == MPACK_TOKEN_STR:
-            obj = obj.decode('utf-8')
+            obj = obj.decode('utf-8', errors='surrogateescape')
         elif node.tok.type == MPACK_TOKEN_EXT:
             code = node.tok.data.ext_type
             if unpacker.ext:
