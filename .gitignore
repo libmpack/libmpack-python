@@ -1,4 +1,5 @@
 build/
+dist/
 cython_debug/
 mpack/mpack-src/
 mpack/*.so
