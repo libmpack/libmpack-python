@@ -12,7 +12,7 @@ from setuptools.command.sdist import sdist
 from distutils.command.clean import clean
 
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 MPACK_VERSION = '1.0.5'
 REPO = 'https://github.com/libmpack/libmpack-python'
 
