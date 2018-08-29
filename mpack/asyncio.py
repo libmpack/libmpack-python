@@ -37,12 +37,13 @@ class Session(object):
         self._reader = reader
         self._writer = writer
         self._session = mpack_session or mpack.Session()
-        self._poll_lock = None
         # FIXME _loop is a private member of StreamReader, but it also seems
         # redundant to accept an extra loop parameter since reader/writer are
         # already associated with loop. Maybe there's a cleaner way?
         self._loop = reader._loop
         self._message_queue = collections.deque()
+        self._poll_conditions = set()
+        self._polling = False
         self._buf = None
 
     async def _read(self):
@@ -83,33 +84,49 @@ class Session(object):
                 self._message_queue.append(Message(name_or_err, args_or_result,
                     id_or_data, self._session, self._writer))
 
-    async def _poll_start(self):
-        while self._poll_lock:
-            await self._poll_lock
-        self._poll_lock = asyncio.Future(loop=self._loop)
-
-    def _poll_stop(self):
-        self._poll_lock.set_result(None)
-        self._poll_lock = None
-
-    async def _poll(self, condition_cb):
-        await self._poll_start()
-        while condition_cb() and not self._reader.at_eof():
+    async def _poll(self):
+        assert not self._polling
+        self._polling = True
+        while True:
+            to_remove = []
+            for cond in self._poll_conditions:
+                if not cond[0]() or self._reader.at_eof():
+                    cond[1].set_result(None)
+                    to_remove.append(cond)
+            for cond in to_remove:
+                self._poll_conditions.remove(cond)
+            if not self._poll_conditions:
+                break
             await self._receive()
-        self._poll_stop()
+        self._polling = False
+
+    def _poll_while(self, condition):
+        future = asyncio.Future(loop=self._loop)
+        self._poll_conditions.add((condition, future))
+        if not self._polling and len(self._poll_conditions) == 1:
+            self._loop.create_task(self._poll())
+        return future
 
     async def next_message(self):
-        await self._poll(lambda: not self._message_queue)
-        return None if self._reader.at_eof() else self._message_queue.popleft()
+        await self._poll_while(lambda: not self._message_queue)
+        return self._message_queue.popleft() if self._message_queue else None
 
-    def request(self, method, *args):
+    async def request(self, method, *args):
         future = asyncio.Future(loop=self._loop)
         request_data = self._session.request(method, args, data=future)
         self._writer.write(request_data)
-        self._loop.create_task(self._poll(lambda: not future.done()))
-        return future
+        await self._poll_while(lambda: not future.done())
+        if not future.done():
+            raise Exception('Connection closed before response arrived')
+        return future.result()
 
-    def notify(self, method, *args):
+    async def notify(self, method, *args):
         notification_data = self._session.notify(method, args)
         self._writer.write(notification_data)
-        return self._writer.drain()
+        future = asyncio.ensure_future(self._writer.drain())
+        await self._poll_while(lambda: not future.done())
+        if not future.done():
+            raise Exception('Connection closed before notification was sent')
+
+    def close(self):
+        self._writer.close()
