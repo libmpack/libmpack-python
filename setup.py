@@ -19,12 +19,13 @@ REPO = 'https://github.com/libmpack/libmpack-python'
 
 class Clean(clean):
     def run(self):
-        files = []
-        with open('.gitignore') as gitignore:
-            for pattern in gitignore:
-                for f in glob.glob(pattern.strip()):
-                    if os.path.isdir(f): shutil.rmtree(f)
-                    elif os.path.isfile(f): os.unlink(f)
+        if os.path.exists('.gitignore'):
+            files = []
+            with open('.gitignore') as gitignore:
+                for pattern in gitignore:
+                    for f in glob.glob(pattern.strip()):
+                        if os.path.isdir(f): shutil.rmtree(f)
+                        elif os.path.isfile(f): os.unlink(f)
         clean.run(self)
 
 
@@ -34,7 +35,6 @@ extensions = [Extension("mpack._mpack", [extension_src])]
 
 def _download_mpack():
     import tarfile
-    import shutil
     if sys.version_info >= (3, 0):
         import urllib.request as urllib
     else:
